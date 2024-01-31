@@ -15,10 +15,15 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(pcl_ros REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(shape_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 
-ament_export_dependencies(pcl_ros rclcpp sensor_msgs shape_msgs)
+find_package(rosidl_default_generators REQUIRED)
+
+ament_export_dependencies(pcl_ros rclcpp sensor_msgs shape_msgs visualization_msgs)
 ament_export_include_directories(include)
 
 include_directories(
@@ -27,6 +32,21 @@ include_directories(
     ${catkin_INCLUDE_DIRS}
 )
 
+
+################
+## Define MSG ##
+################
+rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  "msg/TextureMesh.msg"
+  DEPENDENCIES geometry_msgs visualization_msgs sensor_msgs shape_msgs std_msgs
+  ADD_LINTER_TESTS
+  LIBRARY_NAME ${PROJECT_NAME}
+)
+ament_export_dependencies(rosidl_default_runtime)
+rosidl_get_typesupport_target(cpp_typesupport_target
+  ${PROJECT_NAME}_msgs rosidl_typesupport_cpp)
+
+
 ###########
 ## Build ##
 ###########
@@ -34,7 +54,9 @@ add_executable(read
   src/read_node.cpp
   src/Read.cpp
 )
-ament_target_dependencies(read rclcpp pcl_ros sensor_msgs shape_msgs)
+ament_target_dependencies(read
+  rclcpp pcl_ros sensor_msgs shape_msgs)
+target_link_libraries(read "${cpp_typesupport_target}")
 
 add_executable(write
   src/write_node.cpp

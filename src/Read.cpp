@@ -12,11 +12,13 @@
 
 // PCL
 #include <pcl/io/ply_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/TextureMesh.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
-
+// pcl_ros
 #include <pcl_ros/transforms.hpp>
 
 #ifdef HAVE_VTK
@@ -26,40 +28,40 @@
 
 namespace point_cloud_io {
 
-bool pclToRclcpp(const pcl::PolygonMesh &pclmesh, shape_msgs::msg::Mesh::SharedPtr & msg, rclcpp::Logger logger)
+bool toRosVertices(
+      const pcl::PCLPointCloud2 & cloud,
+      std::vector<geometry_msgs::msg::Point>* vertices,
+      rclcpp::Logger logger)
 {
-  msg = std::make_shared<shape_msgs::msg::Mesh>();
-  msg->vertices.resize(pclmesh.cloud.height*pclmesh.cloud.width);
-
-  /*DEBUG std::cout << "height: " << pclmesh.cloud.height
-  << ", width: " << pclmesh.cloud.width
-  << ", point_step: " << pclmesh.cloud.point_step
-  << ", row_step: " << pclmesh.cloud.row_step
-  << ", is_dense: " << (int)pclmesh.cloud.is_dense << std::endl;*/
-  size_t x_offset, y_offset, z_offset, stride = pclmesh.cloud.point_step;
+  /*DEBUG std::cout << "height: " << cloud.height
+  << ", width: " << cloud.width
+  << ", point_step: " << cloud.point_step
+  << ", row_step: " << cloud.row_step
+  << ", is_dense: " << (int)cloud.is_dense << std::endl;*/
+  size_t x_offset, y_offset, z_offset, stride = cloud.point_step;
 
   // Usually the fields have size 4 and contains "x", "y", "z", "rgb" from a ply file
   bool type_error = false;
-  for(size_t i=0; i< pclmesh.cloud.fields.size(); i++)
+  for(size_t i=0; i< cloud.fields.size(); i++)
   {
-    /*DEBUG std::cout << "field: " << pclmesh.cloud.fields[i].name
-    << ", offset: " << pclmesh.cloud.fields[i].offset
-    << ", dtype: " << (pcl::PCLPointField::PointFieldTypes)pclmesh.cloud.fields[i].datatype
-    << ", count: " << pclmesh.cloud.fields[i].count << std::endl;*/
-    if(pclmesh.cloud.fields[i].name == "x")
+    /*DEBUG std::cout << "field: " << cloud.fields[i].name
+    << ", offset: " << cloud.fields[i].offset
+    << ", dtype: " << (pcl::PCLPointField::PointFieldTypes)cloud.fields[i].datatype
+    << ", count: " << cloud.fields[i].count << std::endl;*/
+    if(cloud.fields[i].name == "x")
     {
-      x_offset = pclmesh.cloud.fields[i].offset;
-      type_error |= pclmesh.cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
+      x_offset = cloud.fields[i].offset;
+      type_error |= cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
     }
-    if(pclmesh.cloud.fields[i].name == "y")
+    if(cloud.fields[i].name == "y")
     {
-      y_offset = pclmesh.cloud.fields[i].offset;
-      type_error |= pclmesh.cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
+      y_offset = cloud.fields[i].offset;
+      type_error |= cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
     }
-    if(pclmesh.cloud.fields[i].name == "z")
+    if(cloud.fields[i].name == "z")
     {
-      z_offset = pclmesh.cloud.fields[i].offset;
-      type_error |= pclmesh.cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
+      z_offset = cloud.fields[i].offset;
+      type_error |= cloud.fields[i].datatype != pcl::PCLPointField::PointFieldTypes::FLOAT32;
     }
   }
   if(type_error)
@@ -67,25 +69,117 @@ bool pclToRclcpp(const pcl::PolygonMesh &pclmesh, shape_msgs::msg::Mesh::SharedP
     RCLCPP_ERROR(logger,"Only support FLOAT32 format.");
     return false;
   }
-  /*std::cout << "xyz: " << x_offset << ", " << y_offset << ", " << z_offset << ", " << std::endl;*/
-  for(size_t i=0; i<msg->vertices.size(); i++)
-  {
-    msg->vertices[i].x = static_cast<double>((*reinterpret_cast<const float*>(&pclmesh.cloud.data[stride*i + x_offset])));
-    msg->vertices[i].y = static_cast<double>((*reinterpret_cast<const float*>(&pclmesh.cloud.data[stride*i + y_offset])));
-    msg->vertices[i].z = static_cast<double>((*reinterpret_cast<const float*>(&pclmesh.cloud.data[stride*i + z_offset])));
-  }
 
-  msg->triangles.resize( pclmesh.polygons.size() );
-  for(size_t i=0; i<msg->triangles.size(); i++)
+  /*std::cout << "xyz: " << x_offset << ", " << y_offset << ", " << z_offset << ", " << std::endl;*/
+  vertices->resize(cloud.height*cloud.width);
+  for(size_t i=0; i<vertices->size(); i++)
   {
-    if(pclmesh.polygons[i].vertices.size() != 3)
+    (*vertices)[i].x = static_cast<double>((*reinterpret_cast<const float*>(&cloud.data[stride*i + x_offset])));
+    (*vertices)[i].y = static_cast<double>((*reinterpret_cast<const float*>(&cloud.data[stride*i + y_offset])));
+    (*vertices)[i].z = static_cast<double>((*reinterpret_cast<const float*>(&cloud.data[stride*i + z_offset])));
+  }
+  return true;
+}
+
+bool toRosTriangles(
+  const std::vector<pcl::Vertices> & polygons,
+  std::vector<shape_msgs::msg::MeshTriangle> * triangles,
+  rclcpp::Logger logger)
+{
+  triangles->resize(polygons.size() );
+  for(size_t i=0; i<triangles->size(); i++)
+  {
+    if(polygons[i].vertices.size() != 3)
     {
       RCLCPP_ERROR(logger,"Detecting non-triangel primatives");
     }
-    msg->triangles[i].vertex_indices[0] = pclmesh.polygons[i].vertices[0];
-    msg->triangles[i].vertex_indices[1] = pclmesh.polygons[i].vertices[1];
-    msg->triangles[i].vertex_indices[2] = pclmesh.polygons[i].vertices[2];
+    (*triangles)[i].vertex_indices[0] = polygons[i].vertices[0];
+    (*triangles)[i].vertex_indices[1] = polygons[i].vertices[1];
+    (*triangles)[i].vertex_indices[2] = polygons[i].vertices[2];
   }
+  return true;
+}
+
+void toRosRgba(
+  const pcl::TexMaterial::RGB & pcl,
+  std_msgs::msg::ColorRGBA * ros)
+{
+  ros->r = pcl.r;
+  ros->g = pcl.g;
+  ros->b = pcl.b;
+  ros->a = 1.0;
+}
+
+bool pclToRclcpp(
+      const pcl::PolygonMesh &pclmesh,
+      shape_msgs::msg::Mesh::SharedPtr & msg,
+      rclcpp::Logger logger)
+{
+  msg = std::make_shared<shape_msgs::msg::Mesh>();
+
+  bool res = toRosVertices(pclmesh.cloud, &(msg->vertices), logger);
+  res &= toRosTriangles(pclmesh.polygons, &(msg->triangles), logger);
+
+  return res;
+}
+
+bool pclToRclcpp(
+      const pcl::TextureMesh &pcltexmesh,
+      point_cloud_io::msg::TextureMesh::SharedPtr & msg,
+      rclcpp::Logger logger)
+{
+  msg = std::make_shared<point_cloud_io::msg::TextureMesh>();
+  //msg->header.stamp = this->get_clock()->now();
+  msg->header.frame_id = "/physiog";
+
+  //pcltexmesh.cloud
+  if( !toRosTriangles(pcltexmesh.tex_polygons[0], &(msg->triangles), logger) ) {
+    return false;
+  }
+
+  if( !toRosVertices(pcltexmesh.cloud, &(msg->vertices), logger) ) {
+    return false;
+  }
+
+  msg->uv_coordinates.resize( pcltexmesh.tex_coordinates[0].size() );
+  for(size_t i=0; i<pcltexmesh.tex_coordinates[0].size(); i++ )
+  {
+    msg->uv_coordinates[i].u = pcltexmesh.tex_coordinates[0][i].x();
+    msg->uv_coordinates[i].v = pcltexmesh.tex_coordinates[0][i].y();
+  }
+  msg->texture_name = pcltexmesh.tex_materials[0].tex_name;
+
+  std::unordered_set<std::string> filetypes = { ".jpeg", ".png", ".tiff", ".jpg"};
+  std::string ext = std::filesystem::path(pcltexmesh.tex_materials[0].tex_file).extension();
+  if(filetypes.find(ext) == filetypes.end())
+  {
+    RCLCPP_ERROR_STREAM(logger,"Texture file type: " << ext << " not supported. Only supports jpg, jpeg, png, and tiff.");
+    return false;
+  }
+  std::ifstream infile(pcltexmesh.tex_materials[0].tex_file, std::ios::binary);
+  if( !infile.is_open() )
+  {
+    RCLCPP_ERROR_STREAM(logger,"File opening failed: " << pcltexmesh.tex_materials[0].tex_file);
+    return false;
+  }
+  infile.seekg(0, std::ios::end);     //go to end of file
+  size_t fsize = infile.tellg();
+  infile.seekg(0, infile.beg);
+  // read data as a block:
+  //msg->texture.header; // left empty
+  msg->texture.format = ext.substr(1, ext.length());
+  msg->texture.data.resize(fsize);
+  infile.read((char*)msg->texture.data.data(), fsize);
+  infile.close();
+
+  toRosRgba(pcltexmesh.tex_materials[0].tex_Ka, &(msg->ka) );
+  toRosRgba(pcltexmesh.tex_materials[0].tex_Kd, &(msg->kd) );
+  toRosRgba(pcltexmesh.tex_materials[0].tex_Ks, &(msg->ks) );
+  msg->alpha = pcltexmesh.tex_materials[0].tex_d;
+  msg->ns = pcltexmesh.tex_materials[0].tex_Ns;
+  msg->illumination = pcltexmesh.tex_materials[0].tex_illum;
+
+  //msg->color = std_msgs::msg::ColorRGBA().set__r(0.0f).set__g(0.0f).set__b(0.0f).set__a(1.0f);
   return true;
 }
 
@@ -106,6 +200,11 @@ Read::Read() :
     meshPublisher_ = this->create_publisher<shape_msgs::msg::Mesh>(
       meshTopic_, rclcpp::QoS(1));
   }
+  if( !texMeshTopic_.empty() )
+  {
+    texMeshPublisher_ = this->create_publisher<point_cloud_io::msg::TextureMesh>(
+      texMeshTopic_, rclcpp::QoS(1));
+  }
   initialize();
 }
 
@@ -117,6 +216,7 @@ bool Read::readParameters() {
   this->declare_parameter("rate", rclcpp::PARAMETER_DOUBLE);
   this->declare_parameter("scale", rclcpp::PARAMETER_DOUBLE);
   this->declare_parameter("mesh_topic", rclcpp::PARAMETER_STRING);
+  this->declare_parameter("texturemesh_topic", rclcpp::PARAMETER_STRING);
   this->declare_parameter("rpy_deg", ypr_);
 
   std::vector<rclcpp::Parameter> params;
@@ -145,6 +245,8 @@ bool Read::readParameters() {
 
   this->get_parameter("mesh_topic", meshTopic_);
 
+  this->get_parameter("texturemesh_topic", texMeshTopic_);
+
   this->get_parameter("rpy_deg", ypr_);
 
   return true;
@@ -171,9 +273,11 @@ void Read::initialize() {
   }
 }
 
-bool Read::readFile(const std::string& filePath, const std::string& pointCloudFrameId) {
+bool Read::readFile(
+      const std::string& filePath,
+      const std::string& pointCloudFrameId)
+{
   if (std::filesystem::path(filePath).extension() == ".ply") {
-    // Load .ply file.
     pcl::PointCloud<pcl::PointXYZRGBNormal> pointCloud;
     if (pcl::io::loadPLYFile(filePath, pointCloud) != 0) {
       return false;
@@ -192,8 +296,16 @@ bool Read::readFile(const std::string& filePath, const std::string& pointCloudFr
     pcl_conversions::moveFromPCL(polygonMesh.cloud, *pointCloudMessage_);
   }
 #endif
+  else if (std::filesystem::path(filePath).extension() == ".obj") {
+    pcl::PointCloud<pcl::PointXYZRGBNormal> pointCloud;
+    if (pcl::io::loadOBJFile(filePath, pointCloud) != 0) {
+      return false;
+    }
+    // Define PointCloud2 message.
+    pcl::toROSMsg(pointCloud, *pointCloudMessage_);
+  }
   else {
-    RCLCPP_ERROR_STREAM(this->get_logger(),"Data format not supported.");
+    RCLCPP_ERROR_STREAM(this->get_logger(),"Data format not supported: " << std::filesystem::path(filePath).filename());
     return false;
   }
 
@@ -213,19 +325,53 @@ bool Read::readFile(const std::string& filePath, const std::string& pointCloudFr
   if(!meshTopic_.empty())
   {
     pcl::PolygonMesh polygonMesh;
-    if( pcl::io::loadPLYFile(filePath, polygonMesh) !=0) {
+    if( std::filesystem::path(filePath).extension() == ".ply" &&
+        pcl::io::loadPLYFile(filePath, polygonMesh) !=0)
+    {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load PLY file: " << std::filesystem::path(filePath).filename());
       return false;
     }
+    if( std::filesystem::path(filePath).extension() == ".obj" &&
+        pcl::io::loadOBJFile(filePath, polygonMesh) !=0)
+    {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load OBJ file: " << std::filesystem::path(filePath).filename());
+      return false;
+    }
+
     pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
     pcl::fromPCLPointCloud2(polygonMesh.cloud, pointCloud);
     pcl::transformPointCloud(pointCloud, pointCloud, tf);
     pcl::toPCLPointCloud2(pointCloud, polygonMesh.cloud);
 
     bool res = pclToRclcpp(polygonMesh, meshMessage_, this->get_logger());
-    RCLCPP_INFO_STREAM(this->get_logger(),"Loaded mesh msg with " << meshMessage_->vertices.size() << " points.");
     if( !res ) {
       return false;
     }
+    RCLCPP_INFO_STREAM(this->get_logger(),"Loaded mesh msg with " << meshMessage_->vertices.size() << " points.");
+  }
+
+  if( !texMeshTopic_.empty() )
+  {
+    pcl::TextureMesh textureMseh;
+    if( pcl::io::loadOBJFile(filePath, textureMseh) != 0 ) {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot open OBJ file: " << std::filesystem::path(filePath).filename());
+      return false;
+    }
+    if( textureMseh.tex_materials.size()!= 1) {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "OBJ contains " << textureMseh.tex_materials.size() << " textures. We only support one");
+      return false;
+    }
+//     std::cout << "textureMseh.cloud.width: " << textureMseh.cloud.width
+//               << "\ntextureMseh.cloud.height: " << textureMseh.cloud.height
+//               << "\ntextureMseh.tex_polygons.size: " << textureMseh.tex_polygons.size()
+//               << "\ntextureMseh.tex_coordinates.size: " << textureMseh.tex_coordinates.size()
+//               << "\ntextureMseh.tex_materials.size: " << textureMseh.tex_materials.size()
+//               << std::endl;
+    bool res = pclToRclcpp(textureMseh, texMeshMessage_, this->get_logger());
+    if( !res ) {
+      return false;
+    }
+    RCLCPP_INFO_STREAM(this->get_logger(),"Loaded textured mesh msg with " << texMeshMessage_->vertices.size() << " points with " << texMeshMessage_->triangles.size() << " triangles and a texture map of " << texMeshMessage_->texture.data.size() << " bytes.");
   }
   return true;
 }
@@ -245,6 +391,11 @@ bool Read::publish() {
   if( meshPublisher_ && meshPublisher_->get_subscription_count() > 0u) {
     meshPublisher_->publish(*meshMessage_);
     RCLCPP_DEBUG_STREAM(this->get_logger(),"Mesh published to topic \"" << meshTopic_ << "\".");
+  }
+
+  if( texMeshPublisher_ ) {
+    texMeshPublisher_->publish( *texMeshMessage_ );
+    RCLCPP_DEBUG_STREAM(this->get_logger(),"TextureMesh published to topic \"" << texMeshTopic_ << "\".");
   }
   return true;
 }
