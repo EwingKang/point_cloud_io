@@ -338,6 +338,7 @@ bool Read::readFile(
       return false;
     }
 
+    // Transform the point cloud
     pcl::PointCloud<pcl::PointXYZRGB> pointCloud;
     pcl::fromPCLPointCloud2(polygonMesh.cloud, pointCloud);
     pcl::transformPointCloud(pointCloud, pointCloud, tf);
@@ -361,6 +362,12 @@ bool Read::readFile(
       RCLCPP_ERROR_STREAM(this->get_logger(), "OBJ contains " << textureMseh.tex_materials.size() << " textures. We only support one");
       return false;
     }
+
+    // Transform the point cloud
+    pcl::PointCloud<pcl::PointXYZRGB> pc_temp;
+    pcl::fromPCLPointCloud2(textureMseh.cloud, pc_temp);
+    pcl::transformPointCloud(pc_temp, pc_temp, tf);
+    pcl::toPCLPointCloud2(pc_temp, textureMseh.cloud);
 //     std::cout << "textureMseh.cloud.width: " << textureMseh.cloud.width
 //               << "\ntextureMseh.cloud.height: " << textureMseh.cloud.height
 //               << "\ntextureMseh.tex_polygons.size: " << textureMseh.tex_polygons.size()
