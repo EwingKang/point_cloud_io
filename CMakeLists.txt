@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.1)
-project(point_cloud_io)
+project(pointcloud_io)
 
 set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall -Wextra -Wpedantic -Werror=return-type)
@@ -8,7 +8,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Options.
 option(BUILD_WITH_VTK_SUPPORT "Build package with support for VTK files." OFF)
 if(BUILD_WITH_VTK_SUPPORT)
-  message("point_cloud_io will be built with support for VTK files.")
+  message("pointcloud_io will be built with support for VTK files.")
   add_definitions(-DHAVE_VTK)
 endif()
 

@@ -7,11 +7,11 @@
  */
 
 #include "rclcpp/rclcpp.hpp"
-#include "point_cloud_io/Write.hpp"
+#include "pointcloud_io/Write.hpp"
 
 int main(int argc, char** argv) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<point_cloud_io::Write>());
+  rclcpp::spin(std::make_shared<pointcloud_io::Write>());
   rclcpp::shutdown();
   return 0;
 }

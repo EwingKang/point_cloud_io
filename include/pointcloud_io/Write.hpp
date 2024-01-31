@@ -12,7 +12,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include <sensor_msgs/msg/point_cloud2.hpp>
 
-namespace point_cloud_io {
+namespace pointcloud_io {
 
 class Write : public rclcpp::Node {
  public:

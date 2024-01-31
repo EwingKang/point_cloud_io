@@ -6,7 +6,7 @@
  *   Institute: ETH Zurich, Autonomous Systems Lab
  */
 
-#include "point_cloud_io/Write.hpp"
+#include "pointcloud_io/Write.hpp"
 
 // PCL
 #include <pcl/io/pcd_io.h>
@@ -15,7 +15,7 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
-namespace point_cloud_io {
+namespace pointcloud_io {
 
 Write::Write() :
   rclcpp::Node("mesh_saver"),
@@ -56,7 +56,7 @@ bool Write::readParameters() {
   if (!allParametersRead) {
     RCLCPP_WARN( this->get_logger(),
         "Could not read all parameters. Typical command-line usage:\n"
-        "rosrun point_cloud_io write"
+        "rosrun pointcloud_io write"
         " _topic:=/my_topic"
         " _folder_path:=/home/user/my_point_clouds"
         " (optional: _file_prefix:=my_prefix"
@@ -120,4 +120,4 @@ void Write::pointCloudCallback(const sensor_msgs::msg::PointCloud2& cloud) {
   RCLCPP_INFO_STREAM(this->get_logger(), "Saved point cloud to " << filePath.str() << ".");
 }
 
-}  // namespace point_cloud_io
+}  // namespace pointcloud_io

@@ -6,7 +6,7 @@
  *   Institute: ETH Zurich, Autonomous Systems Lab
  */
 
-#include "point_cloud_io/Read.hpp"
+#include "pointcloud_io/Read.hpp"
 
 #include <filesystem>
 
@@ -26,7 +26,7 @@
 #endif
 
 
-namespace point_cloud_io {
+namespace pointcloud_io {
 
 bool toRosVertices(
       const pcl::PCLPointCloud2 & cloud,
@@ -125,10 +125,10 @@ bool pclToRclcpp(
 
 bool pclToRclcpp(
       const pcl::TextureMesh &pcltexmesh,
-      point_cloud_io::msg::TextureMesh::SharedPtr & msg,
+      pointcloud_io::msg::TextureMesh::SharedPtr & msg,
       rclcpp::Logger logger)
 {
-  msg = std::make_shared<point_cloud_io::msg::TextureMesh>();
+  msg = std::make_shared<pointcloud_io::msg::TextureMesh>();
   //msg->header.stamp = this->get_clock()->now();
   msg->header.frame_id = "/physiog";
 
@@ -202,7 +202,7 @@ Read::Read() :
   }
   if( !texMeshTopic_.empty() )
   {
-    texMeshPublisher_ = this->create_publisher<point_cloud_io::msg::TextureMesh>(
+    texMeshPublisher_ = this->create_publisher<pointcloud_io::msg::TextureMesh>(
       texMeshTopic_, rclcpp::QoS(1));
   }
   initialize();
@@ -400,4 +400,4 @@ bool Read::publish() {
   return true;
 }
 
-}  // namespace point_cloud_io
+}  // namespace pointcloud_io

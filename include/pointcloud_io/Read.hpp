@@ -12,9 +12,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <shape_msgs/msg/mesh.hpp>
-#include <point_cloud_io/msg/texture_mesh.hpp>
+#include <pointcloud_io/msg/texture_mesh.hpp>
 
-namespace point_cloud_io {
+namespace pointcloud_io {
 
 class Read : public rclcpp::Node {
  public:
@@ -67,12 +67,12 @@ class Read : public rclcpp::Node {
   //sensor_msgs::PointCloud2::Ptr pointCloudMessage_;
   sensor_msgs::msg::PointCloud2::SharedPtr pointCloudMessage_;
   shape_msgs::msg::Mesh::SharedPtr meshMessage_;
-  point_cloud_io::msg::TextureMesh::SharedPtr texMeshMessage_;
+  pointcloud_io::msg::TextureMesh::SharedPtr texMeshMessage_;
 
   //! Point cloud publisher.
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloudPublisher_;
   rclcpp::Publisher<shape_msgs::msg::Mesh>::SharedPtr meshPublisher_;
-  rclcpp::Publisher<point_cloud_io::msg::TextureMesh>::SharedPtr texMeshPublisher_;
+  rclcpp::Publisher<pointcloud_io::msg::TextureMesh>::SharedPtr texMeshPublisher_;
 
   //! Timer for publishing the point cloud.
   //ros::Timer timer_;
@@ -108,4 +108,4 @@ class Read : public rclcpp::Node {
 
 };
 
-}  // namespace point_cloud_io
+}  // namespace pointcloud_io

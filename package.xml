@@ -2,7 +2,7 @@
 
 <package format="3">
 
-  <name>point_cloud_io</name>
+  <name>pointcloud_io</name>
   <version>0.3.17</version>
   <description>Tools to either read and publish or subscribe and write PointCloud2 messages.</description>
 
