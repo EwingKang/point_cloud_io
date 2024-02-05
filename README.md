@@ -36,23 +36,34 @@ This software is built on the Robot Operating System ([ROS2]), which needs to be
 In order to build Point Cloud IO, clone the latest version from this repository into your catkin workspace and compile the package using ROS.
 
     cd ~/ros2/src
-    git clone -b ros2_iron https://github.com/anybotics/point_cloud_io.git
+    git clone -b texture_mesh git@glorymakeup.com:robotic_software_integration/pointcloud_io.git
     cd ../
-    colcon build  --packages-select point_cloud_io
+    colcon build  --packages-select pointcloud_io
 
-Note: building the tool with support for the VTK file format is disabled by default. To enable it, run `colcon build --packages-select point_cloud_io --cmake-args -DBUILD_WITH_VTK_SUPPORT=True` instead.
+Note: building the tool with support for the VTK file format is disabled by default. To enable it, run `colcon build --packages-select pointcloud_io --cmake-args -DBUILD_WITH_VTK_SUPPORT=True` instead.
 
 Usage
 ------------
 
-To create your own launch-file, you can use the examples from `point_cloud_io/launch/...`.
+To create your own launch-file, you can use the examples from `pointcloud_io/launch/...`.
 
 
 ### Read
 
 Load and publish a ply or vtk file with
+```bash
+# mimimal launch
+ros2 run pointcloud_io read --ros-args -p file_path:=/home/user/my_point_cloud.ply -p topic:=/my_topic -p frame:=/sensor_frame
 
-    ros2 run point_cloud_io read --ros-args -p file_path:=/home/user/my_point_cloud.ply -p topic:=/my_topic -p frame:=/sensor_frame
+# Launch with scale, rate, rotation, and mesh
+ros2 run pointcloud_io read --ros-args -p file_path:=src/spray_simulator/assets/Peggie_50K.obj \
+-p topic:=/mkd/user/pointcloud \
+-p mesh_topic:=/mkd/user/mesh \
+-p texturemesh_topic:=/mkd/user/textured_mesh \
+-p frame_id:=/physiog \
+-p rate:=2.0 -p scale:=0.001 -p rpy_deg:=[0.0,0.0,90.0]
+
+```
 
 Optionally, you can also add `-p rate:=1.0` to have the node publish your point cloud at the specified rate.
 Optionally, you can also add `-p scale:=0.01` to uniformly scale your model.
@@ -62,7 +73,7 @@ Optionally, you can also add `-p scale:=0.01` to uniformly scale your model.
 
 Subscribe and save point clouds to a ply file with
 
-    rosrun point_cloud_io write  --ros-args -p topic:=/your_topic -p folder_path:=/home/user/my_point_clouds
+    rosrun pointcloud_io write  --ros-args -p topic:=/your_topic -p folder_path:=/home/user/my_point_clouds
 
 Optionally, you can set parameters to fit the point cloud file names to your needs:
 
@@ -77,7 +88,7 @@ Optionally, you can set parameters to fit the point cloud file names to your nee
 Bugs & Feature Requests
 ------------
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/anybotics/point_cloud_io/issues).
+Please report bugs and request features using the [Issue Tracker](https://git.glorymakeup.com/robotic_software_integration/pointcloud_io/issues).
 
 
 [ROS]: http://www.ros.org
