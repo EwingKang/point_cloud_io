@@ -6,7 +6,7 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror=return-type)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Options.
-option(BUILD_WITH_VTK_SUPPORT "Build package with support for VTK files." OFF)
+option(BUILD_WITH_VTK_SUPPORT "Build package with support for VTK files." ON)
 if(BUILD_WITH_VTK_SUPPORT)
   message("pointcloud_io will be built with support for VTK files.")
   add_definitions(-DHAVE_VTK)

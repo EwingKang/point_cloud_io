@@ -353,11 +353,17 @@ bool Read::readFile(
 
   if( !texMeshTopic_.empty() )
   {
+    // Note: this is a hack, see https://github.com/PointCloudLibrary/pcl/issues/2252
     pcl::TextureMesh textureMseh;
-    if( pcl::io::loadOBJFile(filePath, textureMseh) != 0 ) {
-      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot open OBJ file: " << std::filesystem::path(filePath).filename());
+    pcl::TextureMesh mesh2;
+    int ret = pcl::io::loadPolygonFileOBJ(filePath, textureMseh);
+    std::cout << "ret: " << ret << std::endl;
+    if( pcl::io::loadOBJFile(filePath, mesh2) != 0 ) {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot open OBJ file: " << std::filesystem::path(filePath));
       return false;
     }
+    textureMseh.tex_materials = mesh2.tex_materials;
+
     if( textureMseh.tex_materials.size()!= 1) {
       RCLCPP_ERROR_STREAM(this->get_logger(), "OBJ contains " << textureMseh.tex_materials.size() << " textures. We only support one");
       return false;
@@ -378,7 +384,12 @@ bool Read::readFile(
     if( !res ) {
       return false;
     }
-    RCLCPP_INFO_STREAM(this->get_logger(),"Loaded textured mesh msg with " << texMeshMessage_->vertices.size() << " points with " << texMeshMessage_->triangles.size() << " triangles and a texture map of " << texMeshMessage_->texture.data.size() << " bytes.");
+    RCLCPP_INFO(this->get_logger(),
+                "Loaded textured mesh msg with %ld points, %ld triangles, %ld uv-coords, and a texture data size: %ld bytes",
+                texMeshMessage_->vertices.size(),
+                texMeshMessage_->triangles.size(),
+                texMeshMessage_->uv_coordinates.size(),
+                texMeshMessage_->texture.data.size());
   }
   return true;
 }
