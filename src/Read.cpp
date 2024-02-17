@@ -211,13 +211,14 @@ Read::Read() :
 bool Read::readParameters() {
 
   this->declare_parameter("file_path", rclcpp::PARAMETER_STRING);
-  this->declare_parameter("topic", rclcpp::PARAMETER_STRING);
   this->declare_parameter("frame_id", rclcpp::PARAMETER_STRING);
   this->declare_parameter("rate", rclcpp::PARAMETER_DOUBLE);
-  this->declare_parameter("scale", rclcpp::PARAMETER_DOUBLE);
+  this->declare_parameter("topic", rclcpp::PARAMETER_STRING);
   this->declare_parameter("mesh_topic", rclcpp::PARAMETER_STRING);
   this->declare_parameter("texturemesh_topic", rclcpp::PARAMETER_STRING);
+  this->declare_parameter("offset", offset_);
   this->declare_parameter("rpy_deg", ypr_);
+  this->declare_parameter("scale", scale_);
 
   std::vector<rclcpp::Parameter> params;
   // throws exception if not found
@@ -239,15 +240,12 @@ bool Read::readParameters() {
     RCLCPP_INFO(this->get_logger(), "Publishing mesh at %f hz", updateRate);
   }
 
-  rclcpp::Parameter scale_param("scale", 1.0);
-  this->get_parameter("scale", scale_param);
-  scale_ = scale_param.as_double();
-
   this->get_parameter("mesh_topic", meshTopic_);
-
   this->get_parameter("texturemesh_topic", texMeshTopic_);
 
+  this->get_parameter("offset", offset_);
   this->get_parameter("rpy_deg", ypr_);
+  this->get_parameter("scale", scale_);
 
   return true;
 }
@@ -280,6 +278,7 @@ bool Read::readFile(
   if (std::filesystem::path(filePath).extension() == ".ply") {
     pcl::PointCloud<pcl::PointXYZRGBNormal> pointCloud;
     if (pcl::io::loadPLYFile(filePath, pointCloud) != 0) {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load PLY file: " << filePath);
       return false;
     }
 
@@ -299,6 +298,7 @@ bool Read::readFile(
   else if (std::filesystem::path(filePath).extension() == ".obj") {
     pcl::PointCloud<pcl::PointXYZRGBNormal> pointCloud;
     if (pcl::io::loadOBJFile(filePath, pointCloud) != 0) {
+      RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load PLY file: " << filePath);
       return false;
     }
     // Define PointCloud2 message.
@@ -310,17 +310,25 @@ bool Read::readFile(
   }
 
   pointCloudMessage_->header.frame_id = pointCloudFrameId;
+
+  // Rotation, scale, and offset
   RCLCPP_INFO(this->get_logger(),"Set scale to: %f", scale_);
   RCLCPP_INFO(this->get_logger(),"Set eular ypr to: [%f, %f, %f]", ypr_[0], ypr_[1], ypr_[2]);
-  Eigen::Affine3d tf = Eigen::Affine3d::Identity();
   const double TO_RAD = EIGEN_PI/180.0;
-  tf = Eigen::AngleAxisd(ypr_[0]*TO_RAD, Eigen::Vector3d::UnitX())
-  * Eigen::AngleAxisd(ypr_[1]*TO_RAD, Eigen::Vector3d::UnitY())
-  * Eigen::AngleAxisd(ypr_[2]*TO_RAD, Eigen::Vector3d::UnitZ());
-  tf.scale(scale_);
+  //Eigen::Affine3d tf;
+  //tf = Eigen::AngleAxisd(ypr_[0]*TO_RAD, Eigen::Vector3d::UnitX())
+  //      * Eigen::AngleAxisd(ypr_[1]*TO_RAD, Eigen::Vector3d::UnitY())
+  //      * Eigen::AngleAxisd(ypr_[2]*TO_RAD, Eigen::Vector3d::UnitZ())
+  //      * Eigen::Scaling(scale_);
+  //tf.scale(scale_);
+  Eigen::Affine3d tf = Eigen::Translation3d(Eigen::Vector3d(offset_.data()))
+        * Eigen::AngleAxisd(ypr_[0]*TO_RAD, Eigen::Vector3d::UnitX())
+        * Eigen::AngleAxisd(ypr_[1]*TO_RAD, Eigen::Vector3d::UnitY())
+        * Eigen::AngleAxisd(ypr_[2]*TO_RAD, Eigen::Vector3d::UnitZ())
+        * Eigen::Scaling(scale_);
   pcl_ros::transformPointCloud(tf.cast<float>().matrix(), *pointCloudMessage_, *pointCloudMessage_);
 
-  RCLCPP_INFO_STREAM(this->get_logger(),"Loaded point cloud msg with " << pointCloudMessage_->height * pointCloudMessage_->width << " points.");
+  RCLCPP_INFO(this->get_logger(),"Loaded point cloud msg with %d points", pointCloudMessage_->height * pointCloudMessage_->width);
 
   if(!meshTopic_.empty())
   {
@@ -374,14 +382,15 @@ bool Read::readFile(
     pcl::fromPCLPointCloud2(textureMseh.cloud, pc_temp);
     pcl::transformPointCloud(pc_temp, pc_temp, tf);
     pcl::toPCLPointCloud2(pc_temp, textureMseh.cloud);
-//     std::cout << "textureMseh.cloud.width: " << textureMseh.cloud.width
-//               << "\ntextureMseh.cloud.height: " << textureMseh.cloud.height
-//               << "\ntextureMseh.tex_polygons.size: " << textureMseh.tex_polygons.size()
-//               << "\ntextureMseh.tex_coordinates.size: " << textureMseh.tex_coordinates.size()
-//               << "\ntextureMseh.tex_materials.size: " << textureMseh.tex_materials.size()
-//               << std::endl;
+    //Debug std::cout << "textureMseh.cloud.width: " << textureMseh.cloud.width
+    //          << "\ntextureMseh.cloud.height: " << textureMseh.cloud.height
+    //          << "\ntextureMseh.tex_polygons.size: " << textureMseh.tex_polygons.size()
+    //          << "\ntextureMseh.tex_coordinates.size: " << textureMseh.tex_coordinates.size()
+    //          << "\ntextureMseh.tex_materials.size: " << textureMseh.tex_materials.size()
+    //          << std::endl;
     bool res = pclToRclcpp(textureMseh, texMeshMessage_, this->get_logger());
     if( !res ) {
+      RCLCPP_ERROR(this->get_logger(), "Texture conversion failed");
       return false;
     }
     RCLCPP_INFO(this->get_logger(),

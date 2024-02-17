@@ -91,10 +91,10 @@ class Read : public rclcpp::Node {
   std::string pointCloudFrameId_;
 
   //! Scale for the mesh file.
-  double scale_;
-
+  double scale_ = 1.0;
   //! Rotation for the mesh file
   std::vector<double> ypr_ = {0, 0, 0};
+  std::vector<double> offset_ = {0, 0, 0};
 
   /*!
    * If true, continuous publishing is used.
