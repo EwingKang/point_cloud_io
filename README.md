@@ -61,12 +61,21 @@ ros2 run pointcloud_io read --ros-args -p file_path:=src/spray_simulator/assets/
 -p mesh_topic:=/mkd/user/mesh \
 -p texturemesh_topic:=/mkd/user/textured_mesh \
 -p frame_id:=/physiog \
--p rate:=2.0 -p scale:=0.001 -p rpy_deg:=[0.0,0.0,90.0]
+-p rate:=2.0 -p scale:=0.001 \
+-p rpy_deg:=[0.0,0.0,90.0] -p offset:=[-0.12,-0.115,0.045]
+
+# Launch with predefined parameters, override part of the parameter
+ros2 run pointcloud_io read --ros-args --params-file launch/peggy50k_params.yaml -p file_path:=../../spray_simulator/assets/Peggie_50K.obj
+ros2 run pointcloud_io read --ros-args --params-file launch/manikin_params.yaml -p file_path:=../../spray_simulator/assets/manikin_50K.obj
 
 ```
-
-Optionally, you can also add `-p rate:=1.0` to have the node publish your point cloud at the specified rate.
-Optionally, you can also add `-p scale:=0.01` to uniformly scale your model.
+#### Optional parameters
+* `-p mesh_topic:=/mkd/user/mesh` to publish a mesh simultaneously.
+* `-p texturemesh_topic:=/mkd/user/textured_mesh` to publish the textured mesh simultaneously. Note that the file must be in **.obj** format.
+* `-p rate:=1.0` to have the node publish your point cloud at the specified rate.
+* `-p scale:=0.01` to uniformly scale your model.
+* `-p rpy_deg:=[0.0,0.0,90.0]` to do tait-bryan rotations
+* `-p offset:=[-0.12,-0.115,0.045]` to do translations
 
 
 ### Write
