@@ -49,8 +49,8 @@ To create your own launch-file, you can use the examples from `pointcloud_io/lau
 
 
 ### Read
+Load and publish a ply, vtk, or obj file.
 
-Load and publish a ply or vtk file with
 ```bash
 # mimimal launch
 ros2 run pointcloud_io read --ros-args -p file_path:=/home/user/my_point_cloud.ply -p topic:=/my_topic -p frame:=/sensor_frame
@@ -65,9 +65,8 @@ ros2 run pointcloud_io read --ros-args -p file_path:=src/spray_simulator/assets/
 -p rpy_deg:=[0.0,0.0,90.0] -p offset:=[-0.12,-0.115,0.045]
 
 # Launch with predefined parameters, override part of the parameter
-ros2 run pointcloud_io read --ros-args --params-file launch/peggy50k_params.yaml -p file_path:=../../spray_simulator/assets/Peggie_50K.obj
-ros2 run pointcloud_io read --ros-args --params-file launch/manikin_params.yaml -p file_path:=../../spray_simulator/assets/manikin_50K.obj
-
+ros2 run pointcloud_io read --ros-args --params-file ../../spray_simulator/assets/launch/peggy50k_params.yaml -p file_path:=../../spray_simulator/assets/Peggie_50K.obj
+ros2 run pointcloud_io read --ros-args --params-file ../../spray_simulator/assets/launch/manikin_params.yaml -p file_path:=../../spray_simulator/assets/manikin_50K.obj
 ```
 #### Optional parameters
 * `-p mesh_topic:=/mkd/user/mesh` to publish a mesh simultaneously.

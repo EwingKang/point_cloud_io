@@ -13,6 +13,8 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <shape_msgs/msg/mesh.hpp>
 #include <pointcloud_io/msg/texture_mesh.hpp>
+#include <pointcloud_io/srv/get_mesh.hpp>
+#include <pointcloud_io/srv/get_texture_mesh.hpp>
 
 namespace pointcloud_io {
 
@@ -73,6 +75,18 @@ class Read : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloudPublisher_;
   rclcpp::Publisher<shape_msgs::msg::Mesh>::SharedPtr meshPublisher_;
   rclcpp::Publisher<pointcloud_io::msg::TextureMesh>::SharedPtr texMeshPublisher_;
+
+  //! Services
+  using ServiceGetMesh = pointcloud_io::srv::GetMesh;
+  using ServiceGetTextureMesh = pointcloud_io::srv::GetTextureMesh;
+  rclcpp::Service<ServiceGetMesh>::SharedPtr srvGetMesh_;
+  rclcpp::Service<ServiceGetTextureMesh>::SharedPtr srvGetTextureMesh_;
+  void ServeMesh(
+        const std::shared_ptr<ServiceGetMesh::Request> request,
+        std::shared_ptr<ServiceGetMesh::Response>      response);
+  void ServeTextureMesh(
+        const std::shared_ptr<ServiceGetTextureMesh::Request> request,
+        std::shared_ptr<ServiceGetTextureMesh::Response>      response);
 
   //! Timer for publishing the point cloud.
   //ros::Timer timer_;

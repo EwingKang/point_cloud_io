@@ -205,6 +205,13 @@ Read::Read() :
     texMeshPublisher_ = this->create_publisher<pointcloud_io::msg::TextureMesh>(
       texMeshTopic_, rclcpp::QoS(1));
   }
+
+  using std::placeholders::_1;
+  using std::placeholders::_2;
+  srvGetMesh_ = this->create_service<ServiceGetMesh>(
+    "get_mesh", std::bind(&Read::ServeMesh, this, _1, _2));
+  srvGetTextureMesh_ = this->create_service<ServiceGetTextureMesh>(
+    "get_texture_mesh", std::bind(&Read::ServeTextureMesh, this, _1, _2));
   initialize();
 }
 
@@ -426,5 +433,43 @@ bool Read::publish() {
   }
   return true;
 }
+
+void Read::ServeMesh(
+      const std::shared_ptr<ServiceGetMesh::Request> request,
+      std::shared_ptr<ServiceGetMesh::Response>      response)
+{
+  (void)request;  // supress warning
+  RCLCPP_INFO(this->get_logger(), "Service: sending mesh");
+  if(!meshMessage_)
+  {
+    RCLCPP_ERROR(this->get_logger(), "Mesh not loaded!");
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "Serving mesh with with %ld vertices and %ld triangles.",
+              meshMessage_->vertices.size(), meshMessage_->triangles.size());
+  response->mesh = *meshMessage_;
+}
+
+void Read::ServeTextureMesh(
+      const std::shared_ptr<ServiceGetTextureMesh::Request> request,
+      std::shared_ptr<ServiceGetTextureMesh::Response>      response)
+{
+  (void)request;  // supress warning
+  RCLCPP_INFO(this->get_logger(), "Service: sending textured mesh");
+  if(!texMeshMessage_)
+  {
+    RCLCPP_ERROR(this->get_logger(), "Textured mesh not loaded!");
+    return;
+  }
+  RCLCPP_INFO(this->get_logger(),
+              "Serving texture mesh with with  %ld points, %ld triangles, %ld uv-coords, and a texture data size: %ld bytes",
+              texMeshMessage_->vertices.size(),
+              texMeshMessage_->triangles.size(),
+              texMeshMessage_->uv_coordinates.size(),
+              texMeshMessage_->texture.data.size());
+  response->texture_mesh = *texMeshMessage_;
+}
+
 
 }  // namespace pointcloud_io

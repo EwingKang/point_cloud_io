@@ -38,6 +38,8 @@ include_directories(
 ################
 rosidl_generate_interfaces(${PROJECT_NAME}_msgs
   "msg/TextureMesh.msg"
+  "srv/GetMesh.srv"
+  "srv/GetTextureMesh.srv"
   DEPENDENCIES geometry_msgs visualization_msgs sensor_msgs shape_msgs std_msgs
   ADD_LINTER_TESTS
   LIBRARY_NAME ${PROJECT_NAME}

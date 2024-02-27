@@ -40,11 +40,7 @@ class Write : public rclcpp::Node {
    */
   void pointCloudCallback(const sensor_msgs::msg::PointCloud2& cloud);
 
-  //! ROS node handle.
-  //TODO remove ros::NodeHandle nodeHandle_;
-
   //! Point cloud subscriber.
-  //TODO remove ros::Subscriber pointCloudSubscriber_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointCloudSubscriber_;
 
   //! Point cloud topic to subscribe to.
