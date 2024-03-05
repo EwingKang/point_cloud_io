@@ -33,11 +33,11 @@ bool toRosVertices(
       std::vector<geometry_msgs::msg::Point>* vertices,
       rclcpp::Logger logger)
 {
-  /*DEBUG std::cout << "height: " << cloud.height
+   std::cout << "height: " << cloud.height
   << ", width: " << cloud.width
   << ", point_step: " << cloud.point_step
   << ", row_step: " << cloud.row_step
-  << ", is_dense: " << (int)cloud.is_dense << std::endl;*/
+  << ", is_dense: " << (int)cloud.is_dense << std::endl;
   size_t x_offset, y_offset, z_offset, stride = cloud.point_step;
 
   // Usually the fields have size 4 and contains "x", "y", "z", "rgb" from a ply file
@@ -308,6 +308,10 @@ bool Read::readFile(
       RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load PLY file: " << filePath);
       return false;
     }
+       std::cout << "==============Readobj============\n height: "
+          << pointCloud.height
+          << ", width: " << pointCloud.width
+          << ", is_dense: " << (int)pointCloud.is_dense << std::endl;
     // Define PointCloud2 message.
     pcl::toROSMsg(pointCloud, *pointCloudMessage_);
   }
@@ -406,6 +410,9 @@ bool Read::readFile(
                 texMeshMessage_->triangles.size(),
                 texMeshMessage_->uv_coordinates.size(),
                 texMeshMessage_->texture.data.size());
+    RCLCPP_WARN(this->get_logger(), "Overriding mesh message vertices and textures");
+    meshMessage_->vertices = texMeshMessage_->vertices;
+    meshMessage_->triangles = texMeshMessage_->triangles;
   }
   return true;
 }
