@@ -3,10 +3,12 @@ std_msgs/Header header
 
 # List of triangles; the index values refer to positions in vertices[].
 shape_msgs/MeshTriangle[] triangles
-
 # The actual vertices that make up the mesh.
 geometry_msgs/Point[] vertices
 
+# List of triangles; the index values refer to UVs listed in uv_coordinates[].
+# It must has the same size as triangles
+TextureTriangle[] tex_triangles
 # Location of each vertex within the texture; in the range: [0.0-1.0]
 visualization_msgs/UVCoordinate[] uv_coordinates
 

@@ -404,6 +404,11 @@ bool Read::readFile(
       RCLCPP_ERROR(this->get_logger(), "Texture conversion failed");
       return false;
     }
+    texMeshMessage_->tex_triangles.resize(texMeshMessage_->triangles.size());
+    for( size_t i=0; i<texMeshMessage_->triangles.size(); i++)
+    {
+      texMeshMessage_->tex_triangles[i].uv_indices = texMeshMessage_->triangles[i].vertex_indices;
+    }
     RCLCPP_INFO(this->get_logger(),
                 "Loaded textured mesh msg with %ld points, %ld triangles, %ld uv-coords, and a texture data size: %ld bytes",
                 texMeshMessage_->vertices.size(),
@@ -411,8 +416,9 @@ bool Read::readFile(
                 texMeshMessage_->uv_coordinates.size(),
                 texMeshMessage_->texture.data.size());
     RCLCPP_WARN(this->get_logger(), "Overriding mesh message vertices and textures");
-    meshMessage_->vertices = texMeshMessage_->vertices;
-    meshMessage_->triangles = texMeshMessage_->triangles;
+    // Note: here we use the reduced vertices for the coordinate
+    texMeshMessage_->vertices = meshMessage_->vertices;
+    texMeshMessage_->triangles = meshMessage_->triangles;
   }
   return true;
 }

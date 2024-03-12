@@ -37,6 +37,7 @@ include_directories(
 ## Define MSG ##
 ################
 rosidl_generate_interfaces(${PROJECT_NAME}_msgs
+  "msg/TextureTriangle.msg"
   "msg/TextureMesh.msg"
   "srv/GetMesh.srv"
   "srv/GetTextureMesh.srv"
