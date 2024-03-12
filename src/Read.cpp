@@ -419,6 +419,13 @@ bool Read::readFile(
     // Note: here we use the reduced vertices for the coordinate
     texMeshMessage_->vertices = meshMessage_->vertices;
     texMeshMessage_->triangles = meshMessage_->triangles;
+    RCLCPP_INFO(this->get_logger(),
+                "Publishing textured mesh msg with %ld points, %ld triangles,  %ld tex_triangles, %ld uv-coords, and a texture data size: %ld bytes",
+                texMeshMessage_->vertices.size(),
+                texMeshMessage_->triangles.size(),
+                texMeshMessage_->tex_triangles.size(),
+                texMeshMessage_->uv_coordinates.size(),
+                texMeshMessage_->texture.data.size());
   }
   return true;
 }
