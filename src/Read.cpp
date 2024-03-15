@@ -192,18 +192,19 @@ Read::Read() :
     rclcpp::shutdown();
   }
 
+  rclcpp::QoS pub_qos = rclcpp::QoS(1).keep_last(1).reliable().transient_local();
   pointCloudPublisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-    pointCloudTopic_, rclcpp::QoS(1));
+    pointCloudTopic_, pub_qos );
 
   if(!meshTopic_.empty())
   {
     meshPublisher_ = this->create_publisher<shape_msgs::msg::Mesh>(
-      meshTopic_, rclcpp::QoS(1));
+      meshTopic_, pub_qos);
   }
   if( !texMeshTopic_.empty() )
   {
     texMeshPublisher_ = this->create_publisher<pointcloud_io::msg::TextureMesh>(
-      texMeshTopic_, rclcpp::QoS(1));
+      texMeshTopic_, pub_qos);
   }
 
   using std::placeholders::_1;
