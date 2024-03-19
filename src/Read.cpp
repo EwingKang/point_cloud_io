@@ -33,11 +33,11 @@ bool toRosVertices(
       std::vector<geometry_msgs::msg::Point>* vertices,
       rclcpp::Logger logger)
 {
-   std::cout << "height: " << cloud.height
+   RCLCPP_DEBUG_STREAM(logger, "Convert PCL to ROS2 point, height: " << cloud.height
   << ", width: " << cloud.width
   << ", point_step: " << cloud.point_step
   << ", row_step: " << cloud.row_step
-  << ", is_dense: " << (int)cloud.is_dense << std::endl;
+  << ", is_dense: " << (int)cloud.is_dense );
   size_t x_offset, y_offset, z_offset, stride = cloud.point_step;
 
   // Usually the fields have size 4 and contains "x", "y", "z", "rgb" from a ply file
@@ -309,10 +309,10 @@ bool Read::readFile(
       RCLCPP_ERROR_STREAM(this->get_logger(), "Cannot load PLY file: " << filePath);
       return false;
     }
-       std::cout << "==============Readobj============\n height: "
-          << pointCloud.height
+    RCLCPP_INFO_STREAM(this->get_logger(),
+          "Reading OBJ file, height: " << pointCloud.height
           << ", width: " << pointCloud.width
-          << ", is_dense: " << (int)pointCloud.is_dense << std::endl;
+          << ", is_dense: " << (int)pointCloud.is_dense);
     // Define PointCloud2 message.
     pcl::toROSMsg(pointCloud, *pointCloudMessage_);
   }
@@ -416,7 +416,7 @@ bool Read::readFile(
                 texMeshMessage_->triangles.size(),
                 texMeshMessage_->uv_coordinates.size(),
                 texMeshMessage_->texture.data.size());
-    RCLCPP_WARN(this->get_logger(), "Overriding mesh message vertices and textures");
+    RCLCPP_WARN(this->get_logger(), "Overriding mesh vertices with lean expression");
     // Note: here we use the reduced vertices for the coordinate
     texMeshMessage_->vertices = meshMessage_->vertices;
     texMeshMessage_->triangles = meshMessage_->triangles;
