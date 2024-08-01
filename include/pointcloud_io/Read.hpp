@@ -104,6 +104,9 @@ class Read : public rclcpp::Node {
   //! Point cloud frame id.
   std::string pointCloudFrameId_;
 
+  //! Mesh id.
+  std::string meshId_;
+
   //! Scale for the mesh file.
   double scale_ = 1.0;
   //! Rotation for the mesh file

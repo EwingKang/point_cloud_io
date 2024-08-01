@@ -1,4 +1,5 @@
 # Empty
 ---
 # Mesh response
+string mesh_id
 shape_msgs/Mesh mesh

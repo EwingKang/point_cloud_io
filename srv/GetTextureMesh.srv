@@ -1,4 +1,5 @@
 # Empty
 ---
 # Mesh response
+string mesh_id
 TextureMesh texture_mesh

@@ -219,6 +219,7 @@ Read::Read() :
 bool Read::readParameters() {
 
   this->declare_parameter("file_path", rclcpp::PARAMETER_STRING);
+  this->declare_parameter("mesh_id", rclcpp::PARAMETER_STRING);
   this->declare_parameter("frame_id", rclcpp::PARAMETER_STRING);
   this->declare_parameter("rate", rclcpp::PARAMETER_DOUBLE);
   this->declare_parameter("topic", rclcpp::PARAMETER_STRING);
@@ -247,7 +248,7 @@ bool Read::readParameters() {
     updateDuration_ = std::chrono::microseconds((long int)(1000000.0 / updateRate) );
     RCLCPP_INFO(this->get_logger(), "Publishing mesh at %f hz", updateRate);
   }
-
+  this->get_parameter("mesh_id", meshId_);
   this->get_parameter("mesh_topic", meshTopic_);
   this->get_parameter("texturemesh_topic", texMeshTopic_);
 
@@ -469,6 +470,7 @@ void Read::ServeMesh(
   RCLCPP_INFO(this->get_logger(),
               "Serving mesh with with %ld vertices and %ld triangles.",
               meshMessage_->vertices.size(), meshMessage_->triangles.size());
+  response->mesh_id = meshId_;
   response->mesh = *meshMessage_;
 }
 
@@ -489,6 +491,7 @@ void Read::ServeTextureMesh(
               texMeshMessage_->triangles.size(),
               texMeshMessage_->uv_coordinates.size(),
               texMeshMessage_->texture.data.size());
+  response->mesh_id = meshId_;
   response->texture_mesh = *texMeshMessage_;
 }
 
