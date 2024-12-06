@@ -25,6 +25,27 @@
 #include <pcl/io/vtk_lib_io.h>
 #endif
 
+// expand "~" into home directory
+static inline std::string expandHomeDir(const std::string &path)
+{
+  char *dir = std::getenv("HOME");
+  size_t index = 0;
+  std::string retval = path;
+
+  if (dir != nullptr) {
+    std::string replace(dir);
+
+    while (true) {
+      index = retval.find("~", index);
+      if (index == std::string::npos) {
+        break;
+      }
+      retval.replace(index, 1, replace);
+      index += replace.size();
+    }
+  }
+  return retval;
+}
 
 namespace pointcloud_io {
 
@@ -33,7 +54,7 @@ bool toRosVertices(
       std::vector<geometry_msgs::msg::Point>* vertices,
       rclcpp::Logger logger)
 {
-   RCLCPP_DEBUG_STREAM(logger, "Convert PCL to ROS2 point, height: " << cloud.height
+  RCLCPP_DEBUG_STREAM(logger, "Convert PCL to ROS2 point, height: " << cloud.height
   << ", width: " << cloud.width
   << ", point_step: " << cloud.point_step
   << ", row_step: " << cloud.row_step
@@ -233,7 +254,7 @@ bool Read::readParameters() {
   // throws exception if not found
   params = this->get_parameters({"file_path", "topic", "frame_id"});
 
-  filePath_ = params[0].as_string();
+  filePath_ = expandHomeDir(params[0].as_string() );
   pointCloudTopic_ = params[1].as_string();
   pointCloudFrameId_ = params[2].as_string();
 
