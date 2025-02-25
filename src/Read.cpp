@@ -228,6 +228,7 @@ Read::Read() :
       texMeshTopic_, pub_qos);
   }
 
+
   using std::placeholders::_1;
   using std::placeholders::_2;
   srvGetMesh_ = this->create_service<ServiceGetMesh>(
@@ -235,6 +236,27 @@ Read::Read() :
   srvGetTextureMesh_ = this->create_service<ServiceGetTextureMesh>(
     "get_texture_mesh", std::bind(&Read::ServeTextureMesh, this, _1, _2));
   initialize();
+
+  {
+    rclcpp::PublisherEventCallbacks cb_struct;
+    cb_struct.matched_callback = std::bind(&Read::publisherMatchedCbPointcloud, this, _1);
+    pointCloudPublisher_->bind_event_callbacks(cb_struct, false);
+  }
+  if(meshPublisher_)
+  {
+    rclcpp::PublisherEventCallbacks cb_struct;
+    cb_struct.matched_callback = std::bind(&Read::publisherMatchedCbMesh, this, _1);
+    meshPublisher_->bind_event_callbacks(cb_struct, false);
+    RCLCPP_INFO(this->get_logger(), "Bind Mesh CB");
+  }
+  if(texMeshPublisher_)
+  {
+    rclcpp::PublisherEventCallbacks cb_struct;
+    cb_struct.matched_callback = std::bind(&Read::publisherMatchedCbTexturedMesh, this, _1);
+    texMeshPublisher_->bind_event_callbacks(cb_struct, false);
+    RCLCPP_INFO(this->get_logger(), "Bind TexturedMesh CB");
+  }
+
 }
 
 bool Read::readParameters() {
@@ -475,6 +497,19 @@ bool Read::publish() {
     RCLCPP_DEBUG_STREAM(this->get_logger(),"TextureMesh published to topic \"" << texMeshTopic_ << "\".");
   }
   return true;
+}
+
+void Read::publisherMatchedCbPointcloud(const rclcpp::MatchedInfo &info)
+{
+  RCLCPP_INFO(this->get_logger(), "Pointcloud publisher Match! count change: %d", info.current_count_change);
+}
+void Read::publisherMatchedCbMesh(const rclcpp::MatchedInfo &info)
+{
+  RCLCPP_INFO(this->get_logger(), "Mesh publisher Match! count change: %d", info.current_count_change);
+}
+void Read::publisherMatchedCbTexturedMesh(const rclcpp::MatchedInfo &info)
+{
+  RCLCPP_INFO(this->get_logger(), "TexturedMesh publisher Match! count change: %d", info.current_count_change);
 }
 
 void Read::ServeMesh(

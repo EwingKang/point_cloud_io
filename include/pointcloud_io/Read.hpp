@@ -63,6 +63,14 @@ class Read : public rclcpp::Node {
    */
   bool publish();
 
+  /*!
+   * Callback from publisher event
+   * @return (none)
+   */
+  void publisherMatchedCbPointcloud(const rclcpp::MatchedInfo &info);
+  void publisherMatchedCbMesh(const rclcpp::MatchedInfo &info);
+  void publisherMatchedCbTexturedMesh(const rclcpp::MatchedInfo &info);
+
   //! ROS node handle.
 
   //! Point cloud message to publish.
